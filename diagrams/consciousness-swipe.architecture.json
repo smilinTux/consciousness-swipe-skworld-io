@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Consciousness Swipe: Component Map",
+    "subtitle": "Manifest-V3 browser extension: capture a live AI conversation, store a Soul Snapshot, re-inject it into a fresh session. Derived from docs/ARCHITECTURE.md in smilinTux/consciousness-swipe.",
+    "output": "consciousness-swipe.architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "ai-tab", "type": "external", "label": "AI platform tab", "sublabel": "ChatGPT, Claude, Gemini, Cursor, Windsurf, Codeium", "pos": [40, 40], "size": [260, 64] },
+    { "id": "content-scripts", "type": "frontend", "label": "Content Scripts", "sublabel": "detector, scrapers, oof_parser, injector (no network)", "pos": [40, 200], "size": [260, 72] },
+    { "id": "popup-ui", "type": "frontend", "label": "Popup / Options UI", "sublabel": "popup.js, options.js", "pos": [40, 360], "size": [260, 64] },
+    { "id": "service-worker", "type": "backend", "label": "Service Worker", "sublabel": "background.js: capture, inject, export engine", "pos": [380, 280], "size": [220, 72] },
+    { "id": "storage", "type": "database", "label": "chrome.storage.local", "sublabel": "snapshot index + settings", "pos": [680, 200], "size": [200, 64] },
+    { "id": "skcomm", "type": "backend", "label": "skcomm (optional)", "sublabel": "local REST daemon, :9384", "pos": [680, 500], "size": [200, 64] },
+    { "id": "skcapstone", "type": "external", "label": "skcapstone", "sublabel": "SoulSnapshot store, souls, FEB", "pos": [960, 500], "size": [200, 64] },
+    { "id": "export-targets", "type": "external", "label": "Export targets", "sublabel": "Syncthing relay / HTTP webhook (user-configured)", "pos": [400, 500], "size": [220, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Browser (your machine, no telemetry)", "wraps": ["content-scripts", "popup-ui", "service-worker", "storage"] },
+    { "kind": "region", "label": "Your machine (optional daemon)", "wraps": ["skcomm", "skcapstone"] }
+  ],
+  "connections": [
+    { "id": "ai-to-content", "from": "ai-tab", "to": "content-scripts", "label": "DOM scrape (capture) / prompt paste (inject)", "variant": "default" },
+    { "id": "content-to-sw", "from": "content-scripts", "to": "service-worker", "label": "messages + OOF state", "variant": "default" },
+    { "id": "popup-to-sw", "from": "popup-ui", "to": "service-worker", "label": "capture / inject / export actions", "variant": "default" },
+    { "id": "sw-to-storage", "from": "service-worker", "to": "storage", "label": "read/write snapshot index (always, local-first)", "variant": "default" },
+    { "id": "sw-to-skcomm", "from": "service-worker", "to": "skcomm", "label": "REST capture/list/inject (optional)", "variant": "dashed" },
+    { "id": "skcomm-to-skcapstone", "from": "skcomm", "to": "skcapstone", "label": "souls, FEB, durable memory", "variant": "default" },
+    { "id": "sw-to-export", "from": "service-worker", "to": "export-targets", "label": "multi-target export (optional, user-configured)", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Local-first, sovereign by default", "items": ["Content scripts never touch the network, scraping and tone parsing are pure DOM/text work", "The snapshot is always written to chrome.storage.local; skcomm and other export targets are additive", "No analytics, no telemetry, no third-party endpoints"] }
+  ]
+}
